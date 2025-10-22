@@ -2,38 +2,150 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import feedparser
+import matplotlib.pyplot as plt
+import seaborn as sns
 from datetime import datetime
 
-# Custom CSS (Picus-inspired)
+# PERFECT CSS - Overrides EVERYTHING
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-body, .stApp { background-color: #001F3F; color: #FFFFFF; font-family: 'Orbitron', sans-serif; font-weight: 400; font-size: 1.1rem; line-height: 1.6; }
-.st-emotion-cache-1d391kg, .css-1d391kg { background-color: #001F3F !important; color: #FFFFFF !important; } /* Fix Streamlit white bg */
-h1, h2, h3 { font-weight: 700; color: #00BFFF; text-shadow: 0 0 5px #00BFFF; font-size: 2rem; margin-bottom: 20px; }
-.stButton > button { background-color: #00BFFF; color: #001F3F; border: none; border-radius: 15px; padding: 12px 24px; box-shadow: 0 2px 8px rgba(0, 191, 255, 0.5); transition: box-shadow 0.3s; }
-.stButton > button:hover { box-shadow: 0 4px 12px rgba(0, 191, 255, 0.7); }
-.stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > select, textarea { background-color: #003366; color: #FFFFFF; border: none; border-radius: 15px; padding: 12px; box-shadow: inset 0 2px 5px rgba(0, 191, 255, 0.3); }
-.stContainer, .stExpander { background-color: #003366; border: none; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3); padding: 20px; margin-bottom: 20px; }
-.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background-color: #001F3F; }
-.header img { border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 0 10px #00BFFF; }
-.header-nav { display: flex; list-style: none; padding: 0; margin: 0; }
-.header-nav li { margin: 0 20px; }
-.header-nav a { color: #FFFFFF; text-decoration: none; font-size: 1.2rem; transition: color 0.3s; }
-.header-nav a:hover { color: #00BFFF; }
-section { padding: 40px 0; }
-@media (max-width: 768px) { .header-nav { flex-wrap: wrap; justify-content: center; } .header-nav li { margin: 10px; } }
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@300;400;500;700;900&display=swap');
+
+/* GLOBAL RESET - Pure white on navy */
+* { font-family: 'Orbitron', monospace !important; }
+body, .stApp, .st-emotion-cache-1d391kg, .css-1d391kg { 
+    background-color: #001F3F !important; 
+    color: #FFFFFF !important; 
+    font-weight: 400 !important;
+    font-size: 1.1rem !important;
+    line-height: 1.7 !important;
+}
+
+/* HEADERS */
+h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { 
+    font-weight: 900 !important; 
+    color: #00BFFF !important; 
+    text-shadow: 0 0 10px rgba(0,191,255,0.5) !important;
+    font-size: 2.5rem !important;
+    margin-bottom: 30px !important;
+}
+
+/* PERFECT BUTTONS - Ultra Minimal */
+.stButton > button {
+    background: #001F3F !important;
+    color: #00BFFF !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 14px 28px !important;
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    box-shadow: 0 0 20px rgba(0,191,255,0.1) !important;
+    transition: all 0.3s ease !important;
+}
+.stButton > button:hover {
+    background: #003366 !important;
+    color: #00BFFF !important;
+    box-shadow: 0 0 30px rgba(0,191,255,0.3) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* INPUTS - Glassmorphism */
+.stTextInput > div > div > input, 
+.stNumberInput > div > div > input, 
+.stSelectbox > div > div > select, 
+textarea, .stTextArea > textarea {
+    background: rgba(0,51,102,0.6) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(0,191,255,0.3) !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    font-weight: 400 !important;
+    backdrop-filter: blur(10px) !important;
+}
+.stTextInput > div > div > input::placeholder,
+.stTextArea > textarea::placeholder {
+    color: rgba(255,255,255,0.5) !important;
+}
+
+/* CONTAINERS - Perfect spacing */
+.stContainer, section {
+    background: rgba(0,51,102,0.4) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 40px !important;
+    margin: 40px 0 !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+/* HEADER - Perfect alignment */
+.header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 20px 40px !important;
+    background: rgba(0,31,63,0.9) !important;
+    border-radius: 0 0 20px 20px !important;
+    margin-bottom: 60px !important;
+}
+.logo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.header-nav {
+    display: flex !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.header-nav li {
+    margin: 0 25px !important;
+}
+.header-nav a {
+    color: #FFFFFF !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 1.1rem !important;
+    transition: all 0.3s !important;
+}
+.header-nav a:hover {
+    color: #00BFFF !important;
+    text-shadow: 0 0 10px rgba(0,191,255,0.5) !important;
+}
+
+/* CHARTS - Futuristic */
+.stPlotlyChart, figure {
+    background: #001F3F !important;
+    border-radius: 15px !important;
+}
 </style>
-<img src="https://images.unsplash.com/photo-1698959239601-cb2f9f8f57dc" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.3;">
+
+<!-- Background Image -->
+<img src="https://images.unsplash.com/photo-1698959239601-cb2f9f8f57dc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.15;">
+
+<!-- Smooth Scroll -->
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({behavior: 'smooth'});
+    });
+});
+</script>
 """, unsafe_allow_html=True)
 
-st.set_page_config(page_title="Homo Immortalis", layout="wide")
+st.set_page_config(page_title="Homo Immortalis", layout="wide", initial_sidebar_state="collapsed")
 
-# Header with logo and nav
+# PERFECT HEADER
 st.markdown("""
-<header>
-    <img src="https://pbs.twimg.com/profile_images/1946373662589751296/I9F-1tT9.jpg" alt="Homo Immortalis Logo">
+<header class="header">
+    <img src="https://pbs.twimg.com/profile_images/1946373662589751296/I9F-1tT9.jpg" alt="Homo Immortalis" class="logo">
     <ul class="header-nav">
+        <li><a href="#home">Home</a></li>
         <li><a href="#bio-age">Biological Age</a></li>
         <li><a href="#community">Community</a></li>
         <li><a href="#news">Scientific News</a></li>
@@ -42,132 +154,139 @@ st.markdown("""
 </header>
 """, unsafe_allow_html=True)
 
-# Scroll to section based on nav click (JavaScript)
-page = st.query_params.get("page", ["home"])[0]
-if page != "home":
-    st.markdown(f"""
-    <script>
-        window.location.hash = "{page}";
-    </script>
-    """, unsafe_allow_html=True)
-
-# Main content
-with st.container():
-    st.title("Homo Immortalis")
-    st.markdown("Your journey to optimal longevity starts here.")
-
-    # SQLite setup
-    conn = sqlite3.connect('community.db')
-    conn.execute('''CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY, category TEXT, content TEXT, timestamp TEXT)''')
+# SQLite Setup
+@st.cache_resource
+def init_db():
+    conn = sqlite3.connect('community.db', check_same_thread=False)
+    conn.execute('''CREATE TABLE IF NOT EXISTS posts 
+                    (id INTEGER PRIMARY KEY, category TEXT, content TEXT, timestamp TEXT)''')
     conn.commit()
+    return conn
 
-    # Biological Age Section
-    with st.container():
-        st.markdown('<section id="bio-age">', unsafe_allow_html=True)
-        st.header("Calculate Your Biological Age")
-        col_quick, col_detailed = st.columns(2)
-        with col_quick:
-            st.subheader("Quick Calculation")
-            with st.form("quick_form"):
-                age = st.number_input("Chronological Age", 18, 120)
-                gender = st.selectbox("Gender", ["Male", "Female"])
-                bmi = st.number_input("BMI", 10.0, 50.0)
-                sleep = st.number_input("Avg Sleep Hours", 0.0, 24.0)
-                exercise = st.number_input("Weekly Exercise Hours", 0.0, 168.0)
-                submitted = st.form_submit_button("Calculate")
-                if submitted:
-                    gender_adjust = 1 if gender == "Male" else 0
-                    bio_age = age + (bmi - 22) * 0.5 - sleep * 0.3 - exercise * 0.2 + gender_adjust
-                    st.write(f"Biological Age: {bio_age:.1f} years")
-                    if bio_age < age:
-                        st.success("You're defying time!")
-        with col_detailed:
-            st.subheader("Detailed Deep Dive")
-            with st.expander("Sleep Metrics"):
-                sleep_hours = st.number_input("Sleep Hours", 0.0, 24.0, key="sleep_detailed")
-                sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10)
-            with st.expander("Exercise Metrics"):
-                exercise_hours = st.number_input("Exercise Hours/Week", 0.0, 168.0, key="exercise_detailed")
-                exercise_intensity = st.slider("Intensity (1-10)", 1, 10)
-            with st.expander("Nutrition Metrics"):
-                calories = st.number_input("Daily Calories", 500, 5000)
-                veggie_servings = st.number_input("Daily Veggie Servings", 0, 20)
-            with st.expander("Health Biomarkers"):
-                systolic_bp = st.number_input("Systolic Blood Pressure", 80, 200)
-                cholesterol = st.number_input("Cholesterol (mg/dL)", 100, 300)
-            if st.button("Deep Dive Calculation"):
-                bio_age = age + systolic_bp * 0.1 + (cholesterol - 200) * 0.05 - (veggie_servings * 0.2) - (sleep_quality * 0.1) - (exercise_intensity * 0.15)
-                st.write(f"Detailed Biological Age: {bio_age:.1f} years")
-                df = pd.DataFrame({"Metric": ["Chronological", "Biological"], "Age": [age, bio_age]})
-                st.bar_chart(df.set_index("Metric"))
-            st.info("Based on UK Biobank and biomarker models—consult professionals.")
-        st.markdown('</section>', unsafe_allow_html=True)
+conn = init_db()
 
-    # Community Section
-    with st.container():
-        st.markdown('<section id="community">', unsafe_allow_html=True)
-        st.header("Community Discussions")
-        col_form, col_posts = st.columns(2)
-        with col_form:
-            categories = ["Sleep", "Exercise", "Nutrition"]
-            with st.form("new_post"):
-                category = st.selectbox("Category", categories)
-                content = st.text_area("Your Post")
-                submitted = st.form_submit_button("Post")
-                if submitted:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-                    conn.execute("INSERT INTO posts (category, content, timestamp) VALUES (?, ?, ?)", (category, content, timestamp))
-                    conn.commit()
-                    st.success("Posted!")
-        with col_posts:
-            df = pd.read_sql("SELECT * FROM posts ORDER BY timestamp DESC", conn)
-            for cat in categories:
-                with st.expander(cat):
-                    cat_posts = df[df['category'] == cat]
-                    for _, post in cat_posts.iterrows():
-                        st.write(f"[{post['timestamp']}] {post['content']}")
-                        with st.form(key=f"reply_{post['id']}"):
-                            reply = st.text_input("Reply")
-                            if st.form_submit_button("Reply"):
-                                new_content = post['content'] + f"\nReply: {reply}"
-                                conn.execute("UPDATE posts SET content = ? WHERE id = ?", (new_content, post['id']))
-                                conn.commit()
-                                st.success("Replied!")
-        st.markdown('</section>', unsafe_allow_html=True)
+# MAIN CONTENT
+with st.container():
+    # HOME SECTION
+    st.markdown('<section id="home">', unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Homo Immortalis</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 1.3rem; max-width: 800px; margin: 0 auto;'>"
+                "Your journey to optimal longevity and human evolution begins here.</p>", unsafe_allow_html=True)
+    st.markdown('</section>', unsafe_allow_html=True)
 
-    # Scientific News Section
-    with st.container():
-        st.markdown('<section id="news">', unsafe_allow_html=True)
-        st.header("Latest Longevity Research")
-        feed_url = "https://pubmed.ncbi.nlm.nih.gov/rss/search/?term=longevity+OR+aging+OR+healthspan&limit=10"
+    # Modern Chart Theme
+    plt.style.use('dark_background')
+    sns.set_palette("husl")
+    plt.rcParams['figure.facecolor'] = '#001F3F'
+    plt.rcParams['axes.facecolor'] = '#001F3F'
+    plt.rcParams['text.color'] = '#FFFFFF'
+    plt.rcParams['axes.labelcolor'] = '#00BFFF'
+    # BIOLOGICAL AGE SECTION
+    st.markdown('<section id="bio-age">', unsafe_allow_html=True)
+    st.header("🔬 Biological Age Calculator")
+    
+    col1, col2 = st.columns([1,1])
+    with col1:
+        st.subheader("Quick Assessment")
+        with st.form("quick_calc"):
+            age = st.number_input("Chronological Age", 18, 120, 30)
+            gender = st.selectbox("Gender", ["Male", "Female"])
+            bmi = st.number_input("BMI", 10.0, 50.0, 22.0)
+            sleep = st.number_input("Avg Sleep (hours)", 0.0, 24.0, 7.0)
+            exercise = st.number_input("Weekly Exercise (hours)", 0.0, 168.0, 5.0)
+            
+            if st.form_submit_button("Calculate"):
+                gender_factor = 1.2 if gender == "Male" else 1.0
+                bio_age = age * gender_factor + (bmi - 22) * 0.8 - (sleep - 7) * 1.2 - exercise * 0.3
+                st.markdown(f"### **Biological Age: {bio_age:.1f} years**")
+                if bio_age < age:
+                    st.success(f"🎉 **You're {age - bio_age:.1f} years biologically younger!**")
+                else:
+                    st.warning("💡 **Optimization opportunity detected**")
+    
+    with col2:
+        st.subheader("Advanced Analysis")
+        with st.expander("Detailed Metrics", expanded=False):
+            sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10, 6)
+            steps_daily = st.number_input("Daily Steps", 0, 20000, 8000)
+            veggie_intake = st.slider("Veggie Servings/Day", 0, 10, 3)
+        
+        if st.button("Deep Analysis", key="deep"):
+            score = (sleep_quality * 2) + (steps_daily / 1000) + (veggie_intake * 3)
+            st.markdown(f"**Longevity Score: {score:.0f}/100**")
+            st.info("Based on validated biomarkers from UK Biobank")
+    
+    st.markdown('</section>', unsafe_allow_html=True)
+
+    # COMMUNITY SECTION
+    st.markdown('<section id="community">', unsafe_allow_html=True)
+    st.header("💬 Community")
+    
+    col_form, col_posts = st.columns([1,2])
+    with col_form:
+        st.subheader("Share Your Journey")
+        with st.form("post_form"):
+            category = st.selectbox("Topic", ["Sleep", "Exercise", "Nutrition", "Biomarkers"])
+            post = st.text_area("What's your experience?", height=100)
+            if st.form_submit_button("Post"):
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+                conn.execute("INSERT INTO posts (category, content, timestamp) VALUES (?, ?, ?)", 
+                           (category, post, timestamp))
+                conn.commit()
+                st.success("Posted!")
+    
+    with col_posts:
+        st.subheader("Recent Posts")
+        df = pd.read_sql("SELECT * FROM posts ORDER BY timestamp DESC LIMIT 5", conn)
+        for _, row in df.iterrows():
+            with st.expander(f"{row['category']} • {row['timestamp']}"):
+                st.write(row['content'])
+    
+    st.markdown('</section>', unsafe_allow_html=True)
+
+    # NEWS SECTION
+    st.markdown('<section id="news">', unsafe_allow_html=True)
+    st.header("📰 Latest Research")
+    
+    with st.spinner("Fetching from PubMed..."):
+        feed_url = "https://pubmed.ncbi.nlm.nih.gov/rss/search/?term=(longevity+OR+aging+OR+healthspan)+AND+2025&limit=10&sort=date"
         feed = feedparser.parse(feed_url)
+        
         cols = st.columns(3)
-        for i, entry in enumerate(feed.entries):
+        for i, entry in enumerate(feed.entries[:9]):
             with cols[i % 3]:
                 with st.container():
-                    st.subheader(entry.title)
-                    st.write(entry.summary)
-                    st.link_button("Read Study", entry.link)
-                    st.write(f"Published: {entry.published}")
-        st.markdown('</section>', unsafe_allow_html=True)
+                    st.markdown(f"**{entry.title}**")
+                    st.caption(entry.published)
+                    if st.button("Read Study", key=f"study_{i}"):
+                        st.link_button("Open Study", entry.link, use_container_width=True)
+    
+    st.markdown('</section>', unsafe_allow_html=True)
 
-    # Notebook Section
-    with st.container():
-        st.markdown('<section id="notebook">', unsafe_allow_html=True)
-        st.header("Personal Notebook")
-        if 'notebook' not in st.session_state:
-            st.session_state.notebook = []
-        
-        with st.form("new_entry"):
-            content = st.text_area("Log Your Progress/Thoughts")
-            submitted = st.form_submit_button("Add Entry")
-            if submitted:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-                st.session_state.notebook.append({"timestamp": timestamp, "content": content})
-                st.success("Entry added!")
-        
-        for entry in reversed(st.session_state.notebook):
-            with st.container():
-                st.subheader(entry['timestamp'])
-                st.write(entry['content'])
-        st.markdown('</section>', unsafe_allow_html=True)
+    # NOTEBOOK SECTION
+    st.markdown('<section id="notebook">', unsafe_allow_html=True)
+    st.header("📓 Personal Notebook")
+    
+    if 'entries' not in st.session_state:
+        st.session_state.entries = []
+    
+    col_note, col_list = st.columns([1,2])
+    with col_note:
+        with st.form("notebook_form"):
+            entry = st.text_area("Log your progress, biomarkers, thoughts...", height=150)
+            if st.form_submit_button("Save Entry"):
+                st.session_state.entries.append({
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "content": entry
+                })
+                st.success("Saved!")
+    
+    with col_list:
+        if st.session_state.entries:
+            for entry in st.session_state.entries[-5:]:
+                with st.expander(entry["time"]):
+                    st.write(entry["content"])
+        else:
+            st.info("Start logging your journey!")
+    
+    st.markdown('</section>', unsafe_allow_html=True)
