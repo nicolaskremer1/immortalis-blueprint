@@ -4,64 +4,66 @@ import sqlite3
 import feedparser
 from datetime import datetime
 
-# Custom CSS for improved design
+# Custom CSS (Picus-inspired)
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 body, .stApp { background-color: #001F3F; color: #FFFFFF; font-family: 'Orbitron', sans-serif; font-weight: 400; font-size: 1.1rem; line-height: 1.6; }
-h1, h2, h3 { font-weight: 700; color: #00BFFF; text-shadow: 0 0 5px #00BFFF; font-size: 2rem; }
-.stButton > button { background-color: #00BFFF; color: #001F3F; border: none; border-radius: 10px; padding: 10px 20px; box-shadow: 0 0 10px #00BFFF; transition: box-shadow 0.3s; }
-.stButton > button:hover { box-shadow: 0 0 15px #00BFFF; }
-.stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > select, textarea { background-color: #003366; color: #FFFFFF; border: 1px solid #00BFFF; border-radius: 10px; padding: 10px; box-shadow: inset 0 0 5px #00BFFF; }
-.stExpander { background-color: #003366; border: 1px solid #00BFFF; border-radius: 10px; }
-.stTabs > div > button { color: #FFFFFF; border-bottom: 2px solid transparent; transition: border 0.3s; }
-.stTabs > div > button:hover { border-bottom: 2px solid #00BFFF; }
-.header-nav { display: flex; justify-content: center; list-style: none; padding: 0; }
-.header-nav li { margin: 0 15px; }
-.header-nav a { color: #FFFFFF; text-decoration: none; transition: color 0.3s; }
+.st-emotion-cache-1d391kg, .css-1d391kg { background-color: #001F3F !important; color: #FFFFFF !important; } /* Fix Streamlit white bg */
+h1, h2, h3 { font-weight: 700; color: #00BFFF; text-shadow: 0 0 5px #00BFFF; font-size: 2rem; margin-bottom: 20px; }
+.stButton > button { background-color: #00BFFF; color: #001F3F; border: none; border-radius: 15px; padding: 12px 24px; box-shadow: 0 2px 8px rgba(0, 191, 255, 0.5); transition: box-shadow 0.3s; }
+.stButton > button:hover { box-shadow: 0 4px 12px rgba(0, 191, 255, 0.7); }
+.stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div > select, textarea { background-color: #003366; color: #FFFFFF; border: none; border-radius: 15px; padding: 12px; box-shadow: inset 0 2px 5px rgba(0, 191, 255, 0.3); }
+.stContainer, .stExpander { background-color: #003366; border: none; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3); padding: 20px; margin-bottom: 20px; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background-color: #001F3F; }
+.header img { border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 0 10px #00BFFF; }
+.header-nav { display: flex; list-style: none; padding: 0; margin: 0; }
+.header-nav li { margin: 0 20px; }
+.header-nav a { color: #FFFFFF; text-decoration: none; font-size: 1.2rem; transition: color 0.3s; }
 .header-nav a:hover { color: #00BFFF; }
-.logo { border-radius: 50%; box-shadow: 0 0 10px #00BFFF; }
-@media (max-width: 768px) { .header-nav { flex-direction: column; } }
+section { padding: 40px 0; }
+@media (max-width: 768px) { .header-nav { flex-wrap: wrap; justify-content: center; } .header-nav li { margin: 10px; } }
 </style>
-""", unsafe_allow_html=True)
-
-# Background video
-st.markdown("""
-<video autoplay muted loop playsinline style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.3;">
-  <source src="https://static.videezy.com/system/resources/previews/000/051/033/original/Looped_Dark_Blue_Background.mp4" type="video/mp4">
-</video>
+<img src="https://images.unsplash.com/photo-1698959239601-cb2f9f8f57dc" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0.3;">
 """, unsafe_allow_html=True)
 
 st.set_page_config(page_title="Homo Immortalis", layout="wide")
 
 # Header with logo and nav
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.image("https://pbs.twimg.com/profile_images/1946373662589751296/I9F-1tT9.jpg", width=50, use_column_width=False, output_format="auto")  # Logo
-with col2:
-    st.markdown("""
+st.markdown("""
+<header>
+    <img src="https://pbs.twimg.com/profile_images/1946373662589751296/I9F-1tT9.jpg" alt="Homo Immortalis Logo">
     <ul class="header-nav">
-        <li><a href="?page=Biological Age">Biological Age</a></li>
-        <li><a href="?page=Community">Community</a></li>
-        <li><a href="?page=Scientific News">Scientific News</a></li>
-        <li><a href="?page=Notebook">Notebook</a></li>
+        <li><a href="#bio-age">Biological Age</a></li>
+        <li><a href="#community">Community</a></li>
+        <li><a href="#news">Scientific News</a></li>
+        <li><a href="#notebook">Notebook</a></li>
     </ul>
+</header>
+""", unsafe_allow_html=True)
+
+# Scroll to section based on nav click (JavaScript)
+page = st.query_params.get("page", ["home"])[0]
+if page != "home":
+    st.markdown(f"""
+    <script>
+        window.location.hash = "{page}";
+    </script>
     """, unsafe_allow_html=True)
 
-# Get page from query params
-query_params = st.experimental_get_query_params()
-page = query_params.get("page", ["Biological Age"])[0]
-
-# Rest of the code remains similar, but wrap content in st.container for centering
+# Main content
 with st.container():
     st.title("Homo Immortalis")
+    st.markdown("Your journey to optimal longevity starts here.")
 
-    # SQLite setup (unchanged)
+    # SQLite setup
     conn = sqlite3.connect('community.db')
     conn.execute('''CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY, category TEXT, content TEXT, timestamp TEXT)''')
     conn.commit()
 
-    if page == "Biological Age":
+    # Biological Age Section
+    with st.container():
+        st.markdown('<section id="bio-age">', unsafe_allow_html=True)
         st.header("Calculate Your Biological Age")
         col_quick, col_detailed = st.columns(2)
         with col_quick:
@@ -78,14 +80,14 @@ with st.container():
                     bio_age = age + (bmi - 22) * 0.5 - sleep * 0.3 - exercise * 0.2 + gender_adjust
                     st.write(f"Biological Age: {bio_age:.1f} years")
                     if bio_age < age:
-                        st.success("Evolving toward immortality!")
+                        st.success("You're defying time!")
         with col_detailed:
             st.subheader("Detailed Deep Dive")
             with st.expander("Sleep Metrics"):
-                sleep_hours = st.number_input("Sleep Hours", 0.0, 24.0)
+                sleep_hours = st.number_input("Sleep Hours", 0.0, 24.0, key="sleep_detailed")
                 sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10)
             with st.expander("Exercise Metrics"):
-                exercise_hours = st.number_input("Exercise Hours/Week", 0.0, 168.0)
+                exercise_hours = st.number_input("Exercise Hours/Week", 0.0, 168.0, key="exercise_detailed")
                 exercise_intensity = st.slider("Intensity (1-10)", 1, 10)
             with st.expander("Nutrition Metrics"):
                 calories = st.number_input("Daily Calories", 500, 5000)
@@ -98,9 +100,12 @@ with st.container():
                 st.write(f"Detailed Biological Age: {bio_age:.1f} years")
                 df = pd.DataFrame({"Metric": ["Chronological", "Biological"], "Age": [age, bio_age]})
                 st.bar_chart(df.set_index("Metric"))
-            st.info("Inspired by UK Biobank and biomarker models—consult professionals.")
+            st.info("Based on UK Biobank and biomarker models—consult professionals.")
+        st.markdown('</section>', unsafe_allow_html=True)
 
-    elif page == "Community":
+    # Community Section
+    with st.container():
+        st.markdown('<section id="community">', unsafe_allow_html=True)
         st.header("Community Discussions")
         col_form, col_posts = st.columns(2)
         with col_form:
@@ -128,20 +133,27 @@ with st.container():
                                 conn.execute("UPDATE posts SET content = ? WHERE id = ?", (new_content, post['id']))
                                 conn.commit()
                                 st.success("Replied!")
+        st.markdown('</section>', unsafe_allow_html=True)
 
-    elif page == "Scientific News":
+    # Scientific News Section
+    with st.container():
+        st.markdown('<section id="news">', unsafe_allow_html=True)
         st.header("Latest Longevity Research")
         feed_url = "https://pubmed.ncbi.nlm.nih.gov/rss/search/?term=longevity+OR+aging+OR+healthspan&limit=10"
         feed = feedparser.parse(feed_url)
-        cols = st.columns(3)  # 3-column grid for articles
+        cols = st.columns(3)
         for i, entry in enumerate(feed.entries):
             with cols[i % 3]:
-                with st.expander(entry.title):
+                with st.container():
+                    st.subheader(entry.title)
                     st.write(entry.summary)
                     st.link_button("Read Study", entry.link)
                     st.write(f"Published: {entry.published}")
+        st.markdown('</section>', unsafe_allow_html=True)
 
-    elif page == "Notebook":
+    # Notebook Section
+    with st.container():
+        st.markdown('<section id="notebook">', unsafe_allow_html=True)
         st.header("Personal Notebook")
         if 'notebook' not in st.session_state:
             st.session_state.notebook = []
@@ -155,5 +167,7 @@ with st.container():
                 st.success("Entry added!")
         
         for entry in reversed(st.session_state.notebook):
-            with st.expander(entry['timestamp']):
+            with st.container():
+                st.subheader(entry['timestamp'])
                 st.write(entry['content'])
+        st.markdown('</section>', unsafe_allow_html=True)
