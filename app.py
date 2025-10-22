@@ -410,3 +410,4 @@ with st.container():
         else:
             st.info("Start logging your journey!")
     st.markdown('</section>', unsafe_allow_html=True)
+    
